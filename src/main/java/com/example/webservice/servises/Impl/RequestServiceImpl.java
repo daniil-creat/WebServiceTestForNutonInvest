@@ -3,12 +3,15 @@ package com.example.webservice.servises.Impl;
 import com.example.webservice.entities.Folders;
 import com.example.webservice.entities.Request;
 import com.example.webservice.entities.Tags;
+import com.example.webservice.exceptions.ServiceException;
 import com.example.webservice.repositories.FolderRepository;
 import com.example.webservice.repositories.RequestRepository;
 import com.example.webservice.repositories.TagsRepository;
+import com.example.webservice.repositories.elasticrepo.RequestElasticRepository;
 import com.example.webservice.servises.NextSequenceService;
 import com.example.webservice.servises.RequestService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -19,52 +22,90 @@ import static com.example.webservice.entities.Request.REQUEST_SEQUENCE_NAME;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class RequestServiceImpl implements RequestService {
 
     private final RequestRepository requestRepository;
     private final NextSequenceService nextSequenceService;
     private final TagsRepository tagsRepository;
     private final FolderRepository folderRepository;
+    private final RequestElasticRepository requestElasticRepository;
 
     @Override
     public Request buildAndSaveRequest(Request request) {
+        log.info("Start request service, build and save, input:{}", request);
         Request requestForDb = Request.builder()
                 .id(nextSequenceService.getNextSequence(REQUEST_SEQUENCE_NAME))
                 .length(request.getLength())
                 .modifiedDate(request.getModifiedDate())
                 .text(request.getText())
-                .tags(request.getTags())
                 .build();
-        return requestRepository.save(requestForDb);
+        Request savedRequest = requestRepository.save(requestForDb);
+        requestElasticRepository.save(requestForDb);
+        log.info("End request service, output:{}", savedRequest);
+        return savedRequest;
     }
 
     @Override
-    public Request addTagInRequest(Long tagId, Long requestId) {
+    public Request linkTagWithRequest(Long tagId, Long requestId) {
+        log.info("Start request service, add tag in request, input tagId={}, requestId={}", tagId, requestId);
         Request request = checkRequestExistInDb(requestId);
         Tags tagForRequest = checkTagExistInDb(tagId);
         List<Tags> tagsOfRequest = getTagsOfRequest(request);
-        List<Request> requestsList = new ArrayList<>();
         if (checkCountTagsInRequest(tagsOfRequest) && !tagsOfRequest.contains(tagForRequest)) {
             tagsOfRequest.add(tagForRequest);
-            requestsList.add(request);
             request.setTags(tagsOfRequest);
-            tagForRequest.setRequests(requestsList);
-            tagsRepository.save(tagForRequest);
-            return requestRepository.save(request);
+            Request savedRequest = requestRepository.save(request);
+            requestElasticRepository.save(request);
+            log.info("End request service, output:{}", savedRequest);
+            return savedRequest;
         } else {
-            throw new RuntimeException("Request has tag yet");
+            throw new ServiceException("Request has tag yet");
         }
     }
 
     @Override
-    public Request addRequestInFolder(Long requestId, Long folderId) {
+    public Request linkRequestWithFolder(Long requestId, Long folderId) {
+        log.info("Start request service, add folder in request, input folderId={}, requestId={}", folderId, requestId);
         Request request = checkRequestExistInDb(requestId);
-        Folders folderOfDb = checkFolderExistInDb(folderId);
-        Folders folderOfRequest = request.getFolder();
-        request.setFolder(folderOfRequest);
-        folderOfDb.setRequests(List.of(request));
-        folderRepository.save(folderOfDb);
-        return requestRepository.save(request);
+        Folders folder = checkFolderExistInDb(folderId);
+        request.setFolder(folder);
+        Request savedRequest = requestRepository.save(request);
+        requestElasticRepository.save(request);
+        log.info("End request service, output:{}", savedRequest);
+        return savedRequest;
+    }
+
+    @Override
+    public List<Request> getAllRequests() {
+        log.info("Start request service, get all requests");
+        List<Request> requests = List.of(requestRepository.findAll().iterator().next());
+        log.info("End request service, output:{}", requests);
+        return requests;
+    }
+
+    @Override
+    public Request getRequestByTagId(Long tagId) {
+        log.info("Start request service, get request by tagId={}", tagId);
+        Request request = requestRepository.getRequestByTagsId(tagId);
+        log.info("End request service, output={}", request);
+        return request;
+    }
+
+    @Override
+    public Request getRequestByFolderId(Long folderId) {
+        log.info("Start request service, get request by folderId={}", folderId);
+        Request request = requestRepository.getRequestByFolderId(folderId);
+        log.info("End request service, output={}", request);
+        return request;
+    }
+
+    @Override
+    public List<Request> getRequestByFieldText(String text) {
+        log.info("Start request service, get request by field text, input ={}", text);
+        List<Request> requests = requestElasticRepository.findByText(text);
+        log.info("End request service, output ={}", requests);
+        return requests;
     }
 
     private Request checkRequestExistInDb(Long requestId) {
@@ -72,7 +113,7 @@ public class RequestServiceImpl implements RequestService {
         if (optionalRequest.isPresent()) {
             return optionalRequest.get();
         } else {
-            throw new RuntimeException("This request is not exist in data base");
+            throw new ServiceException("This request is not exist in data base");
         }
     }
 
@@ -81,7 +122,7 @@ public class RequestServiceImpl implements RequestService {
         if (optionalTags.isPresent()) {
             return optionalTags.get();
         } else {
-            throw new RuntimeException("This tag is not exist in data base");
+            throw new ServiceException("This tag is not exist in data base");
         }
     }
 
@@ -98,7 +139,7 @@ public class RequestServiceImpl implements RequestService {
         if (tags.size() < 10) {
             return true;
         } else {
-            throw new RuntimeException("Count tags in request 10");
+            throw new ServiceException("Count tags in request 10");
         }
     }
 
@@ -107,7 +148,7 @@ public class RequestServiceImpl implements RequestService {
         if (optionalTags.isPresent()) {
             return optionalTags.get();
         } else {
-            throw new RuntimeException("This folder is not exist in data base");
+            throw new ServiceException("This folder is not exist in data base");
         }
     }
 }

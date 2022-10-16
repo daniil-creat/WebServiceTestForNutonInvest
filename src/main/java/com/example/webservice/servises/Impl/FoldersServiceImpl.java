@@ -1,21 +1,18 @@
 package com.example.webservice.servises.Impl;
 
 import com.example.webservice.entities.Folders;
-import com.example.webservice.entities.Request;
-import com.example.webservice.entities.Tags;
 import com.example.webservice.repositories.FolderRepository;
-import com.example.webservice.repositories.RequestRepository;
 import com.example.webservice.servises.FolderService;
 import com.example.webservice.servises.NextSequenceService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class FoldersServiceImpl implements FolderService {
 
     private final FolderRepository folderRepository;
@@ -23,11 +20,21 @@ public class FoldersServiceImpl implements FolderService {
 
     @Override
     public Folders buildAndSave(Folders folder) {
+        log.info("Start folder service, build and save, input:{}", folder);
         Folders folderForDb = Folders.builder()
                 .id(nextSequenceService.getNextSequence(Folders.FOLDER_SEQUENCE_NAME))
                 .folderName(folder.getFolderName())
                 .build();
+        Folders savedFolder = folderRepository.save(folderForDb);
+        log.info("End folder service, build and save, output:{}", savedFolder);
+        return savedFolder;
+    }
 
-        return folderRepository.save(folderForDb);
+    @Override
+    public List<Folders> getAllFolders() {
+        log.info("Start folder service, get all folders");
+        List<Folders> foldersOfDb = folderRepository.findAll();
+        log.info("End folder service, output:{}", foldersOfDb);
+        return foldersOfDb;
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-@Document(collection = "folders_collection")
+@Document(collection = "folders")
 @Data
 @Builder
 public class Folders {
@@ -19,5 +19,4 @@ public class Folders {
     @Id
     Long id;
     String folderName;
-    List<Request> requests;
 }

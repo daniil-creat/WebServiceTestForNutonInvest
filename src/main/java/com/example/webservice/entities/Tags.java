@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-@Document(collection = "tags_collection")
+@Document(collection = "tags")
 @Data
 @Builder
 public class Tags {
@@ -22,5 +22,4 @@ public class Tags {
     @Id
     Long id;
     String tagName;
-    List<Request> requests;
 }
