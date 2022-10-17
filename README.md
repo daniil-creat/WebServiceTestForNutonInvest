@@ -1,6 +1,8 @@
 WebServiceTestForNutonInvest(SpringBoot:2.5.0, Swagger2, elasticsearch:7.17.0, mongoDB)
+
 Приложение настроено на локальный port:8088, elasticsearch port:9200, mongoDB port:27017 
 и реализует следующие API: 
+
 POST api/folder/add - сохраняет папку в базе данных(id генерируется автоматически, поэтому на сервер достаточно отправить только название)
 
 {
