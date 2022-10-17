@@ -5,8 +5,7 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document(collection = "folders")
 @Data
@@ -18,5 +17,6 @@ public class Folders {
 
     @Id
     Long id;
+    @Field(name = "folder name")
     String folderName;
 }

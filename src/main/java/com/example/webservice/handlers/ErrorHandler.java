@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class ErrorHandler {
 
     @ExceptionHandler(ServiceException.class)
-    public ResponseEntity<ErrorDTO> handleException(RuntimeException e) {
+    public ResponseEntity<ErrorDTO> handleException(ServiceException e) {
         log.error(e.getMessage());
         return new ResponseEntity<>(new ErrorDTO(e.getMessage()), HttpStatus.BAD_REQUEST);
     }

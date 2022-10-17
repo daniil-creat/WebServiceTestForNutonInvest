@@ -1,15 +1,11 @@
 package com.example.webservice.entities;
 
-import io.github.kaiso.relmongo.annotation.CascadeType;
-import io.github.kaiso.relmongo.annotation.FetchType;
-import io.github.kaiso.relmongo.annotation.OneToMany;
 import lombok.Builder;
 import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.util.List;
+import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document(collection = "tags")
 @Data
@@ -21,5 +17,6 @@ public class Tags {
 
     @Id
     Long id;
+    @Field(name = "tag name")
     String tagName;
 }
